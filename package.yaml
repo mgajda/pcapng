@@ -29,6 +29,7 @@ dependencies:
 - cereal-conduit
 - unliftio-core
 - resourcet
+- lens
 
 library:
   source-dirs: src
@@ -54,3 +55,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - pcapng
+    - hspec
+    - QuickCheck

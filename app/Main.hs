@@ -1,6 +1,7 @@
 module Main where
 
-import Lib
+import           Network.Pcap.Ng
 
 main :: IO ()
-main = someFunc
+main = do
+  putStrLn "Sample app not implemented yet!"

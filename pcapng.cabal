@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 16ec6bfa8dd76a180a292c3bd5a3b205ac0ff47e4b9f9349fb4061a5bd68f740
+-- hash: dac2ceff192d4b73677eee7eb8a2b7b3bea2fd7b9769cc7f53ff82f0bddc0a7b
 
 name:           pcapng
 version:        0.1.0.0
@@ -27,7 +27,8 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Network.Pcap.Ng
+      Network.Pcap.NG.BlockType
   other-modules:
       Paths_pcapng
   hs-source-dirs:
@@ -39,6 +40,7 @@ library
     , cereal-conduit
     , conduit
     , conduit-extra >=1.3.0
+    , lens
     , resourcet
     , unliftio-core
   default-language: Haskell2010
@@ -57,6 +59,7 @@ executable pcapng-exe
     , cereal-conduit
     , conduit
     , conduit-extra >=1.3.0
+    , lens
     , pcapng
     , resourcet
     , unliftio-core
@@ -71,12 +74,15 @@ test-suite pcapng-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , bytestring
     , cereal
     , cereal-conduit
     , conduit
     , conduit-extra >=1.3.0
+    , hspec
+    , lens
     , pcapng
     , resourcet
     , unliftio-core
