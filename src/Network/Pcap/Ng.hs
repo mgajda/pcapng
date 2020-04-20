@@ -1,4 +1,5 @@
 {-# LANGUAGE StrictData      #-}
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Network.Pcap.Ng where
 -- * This module provides a Pcap conduit
@@ -13,21 +14,25 @@ import qualified Data.ByteString.Char8 as BS
 import           Data.Function
 import           Data.Word
 import           Data.Serialize
+import           Data.Conduit.Cereal(conduitGet2)
+import           GHC.Generics
 
 import           Network.Pcap.NG.BlockType
 
 data Block = Block {
     _blockType        :: BlockType
   , _blockBody        :: BS.ByteString
-  }
+  } deriving (Eq, Show, Generic)
+
+makeLenses ''Block
 
 instance Serialize Block where
   get = do
     blockType <- get
-    blockLen  <- get
+    blockLen  <- getWord32le
     let bodyLen = blockLen-12
-    body      <- getBytes bodyLen
-    blockLen2 <- get
+    body      <- getBytes $ fromEnum bodyLen
+    blockLen2 <- getWord32le
     if blockLen == blockLen2
       then pure $ Block blockType body
       else fail $ concat [
@@ -42,6 +47,9 @@ instance Serialize Block where
       paddingLength = (4 - (BS.length body `mod` 4)) `mod` 4
       paddedBody    =  body <> BS.replicate paddingLength '\0'
       totalLength   =  12   +  BS.length paddedBody
+
+pcapNgConduit :: MonadThrow m => ConduitT BS.ByteString Block m ()
+pcapNgConduit  = conduitGet2 get
 
 {-
 data Pkt = Pkt {

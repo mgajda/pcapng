@@ -134,5 +134,5 @@ encodeBlockType other                 = error $ "Error in block type: " <> show 
 knownBlockTypes = [SectionHeader, IfDesc .. EnhancedPacket]
 
 instance Serialize BlockType where
-  get = decodeBlockType <$> get
-  put = put . encodeBlockType
+  get = decodeBlockType <$> getWord32le
+  put = putWord32le . encodeBlockType
