@@ -55,5 +55,10 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - pcapng
+    - directory
+    - conduit
+    - resourcet
     - hspec
+    - hspec-core
+    - filepath
     - QuickCheck

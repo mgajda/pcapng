@@ -10,12 +10,13 @@ module Data.WordString32 (
   , null
   , index
   , drop
+  , take
   , empty
   , length
   , append -- Use Semigroup.<>
   ) where
 
-import           Prelude hiding (drop, null, length)
+import           Prelude hiding (drop, null, length, take)
 import           Control.Exception(assert)
 import           Data.Word
 import           Foreign.ForeignPtr(withForeignPtr, castForeignPtr, ForeignPtr)
@@ -26,6 +27,7 @@ import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString          as BS(empty)
 import           System.IO.Unsafe(unsafeDupablePerformIO)
 import           GHC.ForeignPtr(mallocPlainForeignPtrBytes)
+import Debug.Trace
 
 -- | Opaque array of 32-bit words
 data WordString = WS {
@@ -39,10 +41,10 @@ data WordString = WS {
 fromBS :: BS.ByteString -> WordString
 fromBS (BS.PS wsPtr bsOffset bsLen) =
     if bsOffset `mod` 4 /= 0
-      then error "ByteString offset must be divisible by 4 for Data.WordString32.fromBS"
+      then error $ "ByteString offset must be divisible by 4 for Data.WordString32.fromBS, is: " <> show bsOffset
       else
         if bsLen `mod` 4 /= 0
-          then error "ByteString length must be divisible by 4 for Data.WordString32.fromBS"
+          then error $ "ByteString length must be divisible by 4 for Data.WordString32.fromBS, is: " <> show bsLen
           else WS (castForeignPtr wsPtr) wsOffset wsLen
   where
     wsOffset = bsOffset `div` 4
@@ -53,8 +55,8 @@ toBS :: WordString -> BS.ByteString
 toBS (WS wsPtr wsOffset wsLen) = BS.PS (castForeignPtr wsPtr) (wsOffset*4) (wsLen*4)
 
 {-# INLINE index #-}
-index :: Int -> WordString -> Word32
-index i (WS wsPtr wsOffset wsLen) =
+index :: WordString -> Int -> Word32
+index (WS wsPtr wsOffset wsLen) i =
     assert (offset < wsLen) $
     unsafeDupablePerformIO  $
     withForeignPtr wsPtr    $
@@ -74,6 +76,11 @@ drop i (WS wsPtr wsOffset wsLen) =
   where
     newWsOffset = wsOffset+i
 
+{-# INLINE take #-}
+take :: Int -> WordString -> WordString
+take i (WS wsPtr wsOffset wsLen) =
+        WS wsPtr wsOffset $ min wsLen $ wsOffset+i
+
 empty :: WordString
 empty  = fromBS $ BS.empty
 
@@ -87,9 +94,9 @@ instance Semigroup WordString where
   (<>) = append
 
 foreign import ccall unsafe "string.h memcpy" c_memcpy
-    :: Ptr Word8 -> Ptr Word8 -> CSize -> IO (Ptr Word8)
+    :: Ptr Word32 -> Ptr Word32 -> CSize -> IO (Ptr Word32)
 
-memcpy :: Ptr Word8 -> Ptr Word8 -> Int -> IO ()
+memcpy :: Ptr Word32 -> Ptr Word32 -> Int -> IO ()
 memcpy p q s = do
   c_memcpy p q $ fromIntegral s*4
   return ()
@@ -97,7 +104,7 @@ memcpy p q s = do
 append a b | null b = a
 append a b | null a = b
 append (WS aPtr aOffset aLen)
-       (WS bPtr bOffset bLen) = unsafeDupablePerformIO $ do
+       (WS bPtr bOffset bLen) = trace "<append here>" $ unsafeDupablePerformIO $ do
     newPtr <- mallocPlainForeignPtrBytes totalLen
     withForeignPtr newPtr $ \destPtrA -> do
       withForeignPtr aPtr $ \srcPtrA ->

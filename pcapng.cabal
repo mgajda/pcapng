@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dac2ceff192d4b73677eee7eb8a2b7b3bea2fd7b9769cc7f53ff82f0bddc0a7b
+-- hash: 3a79c11da8109a5081fc51a49c8653e86bf6f3a1cb503ea8421e1b33a42a4820
 
 name:           pcapng
 version:        0.1.0.0
@@ -27,6 +27,8 @@ source-repository head
 
 library
   exposed-modules:
+      Data.WordString32
+      Data.WordString32.Conduit
       Network.Pcap.Ng
       Network.Pcap.NG.BlockType
   other-modules:
@@ -81,7 +83,10 @@ test-suite pcapng-test
     , cereal-conduit
     , conduit
     , conduit-extra >=1.3.0
+    , directory
+    , filepath
     , hspec
+    , hspec-core
     , lens
     , pcapng
     , resourcet

@@ -96,6 +96,7 @@ decodeBlockType  a | a >= 0x0D0D0A00
              && a <= 0x0D0D0AFF = Corruption a
 decodeBlockType  a | a >= 0x80000000
              && a <= 0xFFFFFFFF = LocalUse a
+decodeBlockType  a              = Reserved a
 
 encodeBlockType :: BlockType -> Word32
 encodeBlockType (Corruption       c) = c
