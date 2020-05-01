@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3a79c11da8109a5081fc51a49c8653e86bf6f3a1cb503ea8421e1b33a42a4820
+-- hash: f3f4d06330ee8624dfb92ffcc3b541282eeb888b33d0aa7332e6c026ac3eb819
 
 name:           pcapng
 version:        0.1.0.0
@@ -71,6 +71,7 @@ test-suite pcapng-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Test.Data.WordString32
       Paths_pcapng
   hs-source-dirs:
       test
@@ -79,16 +80,19 @@ test-suite pcapng-test
       QuickCheck
     , base >=4.7 && <5
     , bytestring
+    , bytestring-arbitrary
     , cereal
     , cereal-conduit
     , conduit
     , conduit-extra >=1.3.0
     , directory
     , filepath
+    , genvalidity-hspec
     , hspec
     , hspec-core
     , lens
     , pcapng
     , resourcet
     , unliftio-core
+    , validity
   default-language: Haskell2010

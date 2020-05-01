@@ -16,18 +16,20 @@ module Data.WordString32 (
   , append -- Use Semigroup.<>
   ) where
 
-import           Prelude hiding (drop, null, length, take)
-import           Control.Exception(assert)
-import           Data.Word
-import           Foreign.ForeignPtr(withForeignPtr, castForeignPtr, ForeignPtr)
-import           Foreign.Ptr(Ptr, plusPtr, nullPtr)
-import           Foreign.C.Types(CSize(..))
-import           Foreign.Storable
+import           Control.Exception        (assert)
+import qualified Data.ByteString          as BS (empty, take)
 import qualified Data.ByteString.Internal as BS
-import qualified Data.ByteString          as BS(empty)
-import           System.IO.Unsafe(unsafeDupablePerformIO)
-import           GHC.ForeignPtr(mallocPlainForeignPtrBytes)
-import Debug.Trace
+import           Data.Function            (on)
+import           Data.Word
+import           Debug.Trace
+import           Foreign.C.Types          (CSize (..))
+import           Foreign.ForeignPtr       (ForeignPtr, castForeignPtr,
+                                           withForeignPtr)
+import           Foreign.Ptr              (Ptr, nullPtr, plusPtr)
+import           Foreign.Storable
+import           GHC.ForeignPtr           (mallocPlainForeignPtrBytes)
+import           Prelude                  hiding (drop, length, null, take)
+import           System.IO.Unsafe         (unsafeDupablePerformIO)
 
 -- | Opaque array of 32-bit words
 data WordString = WS {
@@ -35,6 +37,16 @@ data WordString = WS {
   , wsOffset :: Int
   , wsLen    :: Int
   }
+
+instance Show WordString where
+  show = show . BS.take 16 . toBS
+
+-- | Assume these instances will not be used often.
+instance Eq WordString where
+  (==) = (==) `on` toBS
+
+instance Ord WordString where
+  compare = compare `on` toBS
 
 -- TODO: make a direct conduit?
 {-# INLINE fromBS #-}
@@ -56,11 +68,12 @@ toBS (WS wsPtr wsOffset wsLen) = BS.PS (castForeignPtr wsPtr) (wsOffset*4) (wsLe
 
 {-# INLINE index #-}
 index :: WordString -> Int -> Word32
+index  _                        i | i < 0 = error "index cannot be negative"
 index (WS wsPtr wsOffset wsLen) i =
     assert (offset < wsLen) $
     unsafeDupablePerformIO  $
     withForeignPtr wsPtr    $
-    (`peekElemOff` offset)
+      (`peekElemOff` offset)
   where
     offset = wsOffset + i
 
@@ -70,9 +83,10 @@ null (WS wsPtr wsOffset wsLen) = wsOffset == wsLen
 
 {-# INLINE drop #-}
 drop :: Int -> WordString -> WordString
+drop i  _                | i < 0 = error "Dropping negative number of bytes"
 drop i (WS wsPtr wsOffset wsLen) =
     assert (newWsOffset<wsLen)   $
-      WS wsPtr newWsOffset wsLen
+      WS wsPtr (min newWsOffset wsLen) wsLen
   where
     newWsOffset = wsOffset+i
 
@@ -115,4 +129,3 @@ append (WS aPtr aOffset aLen)
     return $ WS (castForeignPtr newPtr) 0 totalLen
   where
     totalLen = aLen+bLen
-

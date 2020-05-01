@@ -1,24 +1,27 @@
-{-# language NamedFieldPuns      #-}
-{-# language ScopedTypeVariables #-}
-import           Test.Hspec -- hiding (shouldReturn, shouldBe, shouldSatisfy)
-import           Test.Hspec.Core.Runner
-import           Test.QuickCheck
-import           Data.Conduit
-import qualified Data.Conduit.Combinators as C(sourceFile, head)
-import           Data.Conduit.Cereal(sinkGet)
-import           Data.Conduit.List(consume)
-import           Data.Serialize(get)
-import           System.Directory
-import           System.FilePath.Posix(takeFileName, takeExtension, (</>))
-import           Control.Monad(forM, forM_)
+{-# LANGUAGE NamedFieldPuns      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+import           Control.Lens                 ((^.))
+import           Control.Monad                (forM, forM_)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
-import           Control.Lens((^.))
+import           Data.Conduit
+import           Data.Conduit.Cereal          (sinkGet)
+import qualified Data.Conduit.Combinators     as C (head, sourceFile)
+import           Data.Conduit.List            (consume)
+import           Data.Serialize               (get)
+import           System.Directory
+import           System.FilePath.Posix        (takeExtension, takeFileName,
+                                               (</>))
+import           System.IO                    (hPutStrLn, stderr)
+import           Test.Hspec
+import           Test.Hspec.Core.Runner
+import           Test.QuickCheck
 
-import qualified Data.WordString32.Conduit as WSC
+import qualified Data.WordString32.Conduit    as WSC
 import           Network.Pcap.Ng
 import           Network.Pcap.NG.BlockType
 
+import qualified Test.Data.WordString32       as Test.WordString32 (spec)
 
 main :: IO ()
 main = hspecWith config spec
@@ -28,15 +31,6 @@ main = hspecWith config spec
                , configFailureReport = Just "failure.log"
                , configDiff          = True
                }
-
-{-
-hspecConfig = defaultConfig { configFormatter = configFormatter defaultConfig { exampleFailed = failureFormatter }}
-  where
-    failureFormatter path result = do
-      let super = exampleFailed $ configFormatter defaultConfig
-      super path result
-      getFailMessages >>= either formatException writeLine
- -}
 
 
 filesWithExts ::      FilePath -- ^ Directory to search
@@ -50,14 +44,16 @@ filesWithExts dirName exts =
 
 consumeBlock :: MonadIO m => ConduitT Block Void m ()
 consumeBlock = awaitForever
-             $ liftIO . print . (^. blockType)
+             $ liftIO . hPutStrLn stderr . show . (^. blockType)
 
 testPcapFile :: FilePath -> Spec
 testPcapFile         filename =
     it filename $ do
       parse filename >>= (`shouldMatchList` [])
 
-blockTypes = awaitForever $ \block -> yield (block ^. blockType)
+blockTypes = awaitForever $ \block -> do
+                               liftIO $ print $ block ^. blockType
+                               yield (block ^. blockType)
 
 parse filename = runConduitRes
                $ WSC.sourceFile filename .| pcapNgConduit2 .| blockTypes .| consume
@@ -83,13 +79,15 @@ parseHeader filename = do
     Nothing -> error "No blocktype here!"
 
 spec = do
-  describe "Block recognition" $ do
-    return ()
-  describe "Pcap.org examples" $ do
-    files <- runIO $ filesWithExts "test/pcapng.org" [".ntar", ".pcapng"]
-    runIO $ putStrLn $ "Test files found: " <> show files
-    describe "parse first block" $
-      forM_ files testPcapFileHeader
-    describe "parse entire file of blocks" $
-      forM_ files testPcapFile
-
+  describe "Data.WordString32" $
+    Test.WordString32.spec
+  xdescribe "others" $ do
+    describe "Block recognition" $ do
+      return ()
+    describe "Pcap.org examples" $ do
+      files <- runIO $ filesWithExts "test/pcapng.org" [".ntar", ".pcapng"]
+      runIO $ putStrLn $ "Test files found: " <> show files
+      describe "parse first block" $
+        forM_ files testPcapFileHeader
+      describe "parse entire file of blocks" $
+        forM_ files testPcapFile

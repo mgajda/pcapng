@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Network.Pcap.NG.BlockType(
@@ -15,6 +16,7 @@ import qualified Data.ByteString.Char8 as BS
 import           Data.Function
 import           Data.Word
 import           Data.Serialize
+import           Numeric(showHex)
 
 -- | PCAP-NG block type
 --
@@ -45,7 +47,35 @@ data BlockType =
   | Reserved   Word32
   | Corruption Word32
   | LocalUse   Word32
-  deriving (Show, Read)
+
+instance Show BlockType where
+  show (Corruption w)               = "Corruption " <> showHex w ""
+  show (Reserved   w)               = "Reserved "   <> showHex w ""
+  show (LocalUse   w)               = "LocalUse "   <> showHex w ""
+  show  IfDesc                      = "IfDesc"
+  show  Packet                      = "Packet"
+  show  SimplePacket                = "SimplePacket (obsolete)"
+  show  NameResolution              = "NameResolution"
+  show  IfStats                     = "IfStats"
+  show  EnhancedPacket              = "EnhancedPacket"
+  show  IRIGTimestamp               = "IRIGTimestamp"
+  show  EncapsulationInfo           = "EncapsulationInfo"
+  show  SystemDJournal              = "SystemDJournal"
+  show  DecryptionSecrets           = "DecryptionSecrets"
+  show  HoneMachInfo                = "HoneMachInfo"
+  show  HoneConnEvent               = "HoneConnEvent"
+  show  SysdigMachInfo              = "SysdigMachInfo"
+  show  SysdigProcInfo { version }  = "SysdigProcInfo v" <> show version
+  show  SysdigFDList                = "SysdigFDList"
+  show  SysdigEvent                 = "SysdigEvento"
+  show  SysdigIfList                = "SysdigIfList"
+  show  SysdigEventWithFlags        = "SysdigEventWithFlags"
+  show  SysdigUserList              = "SysdigUserList"
+  show  Custom { copyBlock }        = mconcat ["Custom (", copyCode, ">"]
+    where
+      copyCode | copyBlock = "copy"
+               | otherwise = "do not copy"
+  show  SectionHeader               = "SectionHeader"
 
 instance Eq BlockType where
   (==) = (==) `on` encodeBlockType

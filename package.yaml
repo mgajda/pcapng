@@ -62,3 +62,6 @@ tests:
     - hspec-core
     - filepath
     - QuickCheck
+    - validity
+    - genvalidity-hspec
+    - bytestring-arbitrary

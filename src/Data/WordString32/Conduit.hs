@@ -20,7 +20,7 @@ sourceFile :: (MonadResource m
 sourceFile filepath = C.sourceFile filepath .| go
   where
     go = do
-      bs <- await
+      bs <- trace "sourceFile chunk" $ await
       case bs of
         Nothing -> return ()
         Just bs | BS.length bs `mod` 4 /= 0 -> do
@@ -48,8 +48,11 @@ atLeast n = go WS.empty
       maybeChunk <- await
       case maybeChunk of
         Nothing | WS.null rest -> return ()
-        Nothing                -> fail $ "Not enough bytes to satisfy atLeast: " <> show (WS.length rest) <> " wanting: " <> show n
+        Nothing                -> fail
+                                $ mconcat ["Not enough bytes to satisfy atLeast: ",
+                                           show $ WS.length rest, " wanting: ", show n]
         Just chunk | WS.length rest + WS.length chunk >= n ->
-          yield $ rest <> chunk
-        Just shortChunk -> go $ rest <> shortChunk
+          trace "long chunk" $
+            yield $ rest <> chunk
+        Just shortChunk -> trace "short chunk" $ go $ rest <> shortChunk
 

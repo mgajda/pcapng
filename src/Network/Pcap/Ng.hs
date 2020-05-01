@@ -8,6 +8,7 @@ module Network.Pcap.Ng where
 --   not necessarily from libpcap, file or live source.
 
 import           Conduit
+import           Control.Exception (assert)
 import           Control.Lens
 import           Control.Lens.TH
 import qualified Data.ByteString.Char8 as BS
@@ -20,6 +21,8 @@ import           Data.Conduit.Cereal(conduitGet2)
 import           GHC.Generics
 
 import           Network.Pcap.NG.BlockType
+
+import           Debug.Trace(trace)
 
 data Block = Block {
     _blockType        :: BlockType
@@ -54,7 +57,7 @@ pcapNgConduit :: MonadThrow m => ConduitT BS.ByteString Block m ()
 pcapNgConduit  = conduitGet2 get
 
 pcapNgConduit2 :: MonadFail m => ConduitT WS.WordString Block m ()
-pcapNgConduit2 = WSC.atLeast 12 -- PcapNG files are expected to be word aligned, with 12 minimum block size
+pcapNgConduit2 = WSC.atLeast  12 -- PcapNG files are expected to be word aligned, with 12 minimum block size
               .| blockConduit LittleEndian -- SHB in the beginning should fix endianness anyway
 
 -- TODO: use CAF
@@ -62,21 +65,25 @@ sameEndianness  = LittleEndian
 otherEndianness = BigEndian
 
 -- FIXME: how to ensure unrolling on endianness?
-blockConduit endianness = do
-  maybeNext <- await
-  case maybeNext of
-    Nothing  -> return ()
-    Just dta | dta `WS.index` 0 == 0x0A0D0D0A -> do -- Section header block, palindromic identification
-      -- identify endianness from magic number
-      let newEndianness | dta `WS.index` 2 == 0x1A2B3C4D = sameEndianness  -- same endianness as the machine
-                        | dta `WS.index` 2 == 0x4D3C2B1A = otherEndianness -- opposite endianness on magic
-                        | otherwise                      = error $ "Cannot recover endianness from: " <> show (dta `WS.index` 2)
-      decodeBlock  newEndianness dta
-      blockConduit newEndianness
-    Just dta -> decodeBlock endianness dta
+blockConduit :: Monad m
+             => Endianness
+             -> ConduitT WS.WordString Block m ()
+blockConduit endianness = awaitForever $ \dta -> do
+    if dta `WS.index` 0 == 0x0A0D0D0A
+       then do -- Section header block, palindromic identification
+          -- identify endianness from magic number
+          let newEndianness | dta `WS.index` 2 == 0x1A2B3C4D = trace "same endianness"  sameEndianness  -- same endianness as the machine
+                            | dta `WS.index` 2 == 0x4D3C2B1A = trace "other endianness" otherEndianness -- opposite endianness on magic
+                            | otherwise                      = error $ "Cannot recover endianness from: " <> show (dta `WS.index` 2)
+          decodeBlock  newEndianness dta
+          blockConduit newEndianness
+       else decodeBlock endianness dta
 
 {-# INLINE decodeBlock #-}
-decodeBlock endianness dta = do
+decodeBlock endianness dta =
+  trace ("Block len is " <> show (dta `WS.index` 3) <> " after swap " <> show (swapper endianness (dta `WS.index` 3)) <> show dta) $
+  assert (headingLen >= 12) $
+  assert (headingLen == trailingLen) $ do
     yield Block { _blockType = toEnum $ fromEnum $ swapper endianness $ dta `WS.index` 0
                 , _blockBody = WS.toBS body
                 }
@@ -84,10 +91,10 @@ decodeBlock endianness dta = do
   where
     headingLen  = fromIntegral $ swapper endianness $ dta `WS.index` 3
     bodyLen     = headingLen - 12
-    body        = WS.take bodyLen
+    body        = WS.take (bodyLen `div` 4)
                 $ WS.drop 2                        dta
-    rest        = WS.drop headingLen dta
-    trailingLen = dta `WS.index` (headingLen - 1)
+    rest        = WS.drop (headingLen `div` 4) dta
+    trailingLen = fromIntegral $ swapper endianness $ dta `WS.index` (headingLen - 1)
 
 
 swapper endianness | sameEndianness == endianness = id
