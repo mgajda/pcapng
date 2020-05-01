@@ -92,7 +92,7 @@ null (WS wsPtr wsOffset wsLen) = wsOffset == wsLen
 
 {-# INLINE drop #-}
 drop :: Int -> WordString -> WordString
-drop i  _                | i < 0 = error "Dropping negative number of bytes"
+drop i  _                | i < 0 = error "Dropping negative number of words"
 drop i (WS wsPtr wsOffset wsLen) =
     assert (newWsOffset<wsLen)   $
       WS wsPtr (min newWsOffset wsLen) wsLen
@@ -101,6 +101,7 @@ drop i (WS wsPtr wsOffset wsLen) =
 
 {-# INLINE take #-}
 take :: Int -> WordString -> WordString
+take i _ | i < 0 = error "Taking negative number of words"
 take i (WS wsPtr wsOffset wsLen) =
         WS wsPtr wsOffset $ min wsLen $ wsOffset+i
 

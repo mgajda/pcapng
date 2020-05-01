@@ -81,13 +81,12 @@ parseHeader filename = do
 spec = do
   describe "Data.WordString32" $
     Test.WordString32.spec
-  xdescribe "others" $ do
-    describe "Block recognition" $ do
-      return ()
-    describe "Pcap.org examples" $ do
-      files <- runIO $ filesWithExts "test/pcapng.org" [".ntar", ".pcapng"]
-      runIO $ putStrLn $ "Test files found: " <> show files
-      describe "parse first block" $
-        forM_ files testPcapFileHeader
-      describe "parse entire file of blocks" $
-        forM_ files testPcapFile
+  describe "Block recognition" $ do
+    return ()
+  xdescribe "Pcap.org examples" $ do
+    files <- runIO $ filesWithExts "test/pcapng.org" [".ntar", ".pcapng"]
+    runIO $ putStrLn $ "Test files found: " <> show files
+    describe "parse first block" $
+      forM_ files testPcapFileHeader
+    describe "parse entire file of blocks" $
+      forM_ files testPcapFile

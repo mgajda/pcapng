@@ -1,5 +1,5 @@
-{-# LANGUAGE StrictData      #-}
 {-# LANGUAGE DeriveGeneric   #-}
+{-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Network.Pcap.Ng where
 -- * This module provides a Pcap conduit
@@ -8,25 +8,25 @@ module Network.Pcap.Ng where
 --   not necessarily from libpcap, file or live source.
 
 import           Conduit
-import           Control.Exception (assert)
+import           Control.Exception         (assert)
 import           Control.Lens
 import           Control.Lens.TH
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Char8     as BS
+import           Data.Conduit.Cereal       (conduitGet2)
 import           Data.Function
-import           Data.Word
-import qualified Data.WordString32 as WS
-import qualified Data.WordString32.Conduit as WSC
 import           Data.Serialize
-import           Data.Conduit.Cereal(conduitGet2)
+import           Data.Word
+import qualified Data.WordString32         as WS
+import qualified Data.WordString32.Conduit as WSC
 import           GHC.Generics
 
 import           Network.Pcap.NG.BlockType
 
-import           Debug.Trace(trace)
+import           Debug.Trace               (trace)
 
 data Block = Block {
-    _blockType        :: BlockType
-  , _blockBody        :: BS.ByteString
+    _blockType :: BlockType
+  , _blockBody :: BS.ByteString
   } deriving (Eq, Show, Generic)
 
 makeLenses ''Block
@@ -81,13 +81,15 @@ blockConduit endianness = awaitForever $ \dta -> do
 
 {-# INLINE decodeBlock #-}
 decodeBlock endianness dta =
-  trace ("Block len is " <> show (dta `WS.index` 3) <> " after swap " <> show (swapper endianness (dta `WS.index` 3)) <> show dta) $
   assert (headingLen >= 12) $
   assert (headingLen == trailingLen) $ do
     yield Block { _blockType = toEnum $ fromEnum $ swapper endianness $ dta `WS.index` 0
                 , _blockBody = WS.toBS body
                 }
-    leftover rest
+    trace ("Block len is " <> show (dta `WS.index` 1) <> " after swap " <> show (swapper endianness (dta `WS.index` 1))
+         <> "data" <> show dta
+         <> "rest" <> show rest) $
+      leftover rest
   where
     headingLen  = fromIntegral $ swapper endianness $ dta `WS.index` 3
     bodyLen     = headingLen - 12
@@ -98,7 +100,7 @@ decodeBlock endianness dta =
 
 
 swapper endianness | sameEndianness == endianness = id
-swapper endianness                                = byteSwap32
+swapper endianness = byteSwap32
 
 data Endianness =
     LittleEndian
