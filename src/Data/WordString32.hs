@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | Word32 strings for convenient handling
 --   Just like ByteString, but with 32-bit each
 --
@@ -39,7 +40,15 @@ data WordString = WS {
   }
 
 instance Show WordString where
-  show = show . BS.take 16 . toBS
+  --show ws = show (BS.take 16 $ toBS ws)
+  show ws =
+    unwords [show bsOfs
+            ,show bsLen
+            ,show $ BS.take 16 bs
+            ,show $ BS.take 16 nullBs]
+    where
+      bs@(BS.PS bsPtr bsOfs bsLen) = toBS ws
+      nullBs = BS.PS bsPtr 0 bsLen
 
 -- | Assume these instances will not be used often.
 instance Eq WordString where
@@ -117,15 +126,21 @@ memcpy p q s = do
 
 append a b | null b = a
 append a b | null a = b
-append (WS aPtr aOffset aLen)
-       (WS bPtr bOffset bLen) = trace "<append here>" $ unsafeDupablePerformIO $ do
-    newPtr <- mallocPlainForeignPtrBytes totalLen
+append a@(WS aPtr aOffset aLen)
+       b@(WS bPtr bOffset bLen) = --trace ("<append here>: " <> show a <> " <> " <> show b) $
+  unsafeDupablePerformIO $ do
+    newPtr :: ForeignPtr Word32 <- mallocPlainForeignPtrBytes (4*totalLen)
     withForeignPtr newPtr $ \destPtrA -> do
       withForeignPtr aPtr $ \srcPtrA ->
-        memcpy destPtrA (srcPtrA `plusPtr` aOffset) aLen
-      let destPtrB = destPtrA `plusPtr` aLen
+        memcpy destPtrA (srcPtrA `plusWords` aOffset) aWords
+      let destPtrB = (destPtrA :: Ptr Word32) `plusWords` aWords
       withForeignPtr bPtr $ \srcPtrB ->
-        memcpy destPtrB (srcPtrB `plusPtr` bOffset) bLen
-    return $ WS (castForeignPtr newPtr) 0 totalLen
+        memcpy destPtrB (srcPtrB `plusWords` bOffset) bWords
+    let result = WS newPtr 0 totalLen
+    --trace ("result is: " <> show result) $
+    return result
   where
-    totalLen = aLen+bLen
+    totalLen = aWords+bWords
+    aWords   = aLen-aOffset
+    bWords   = bLen-bOffset
+    plusWords a b = a `plusPtr` (b*4)
