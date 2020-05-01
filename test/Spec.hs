@@ -83,10 +83,10 @@ spec = do
     Test.WordString32.spec
   describe "Block recognition" $ do
     return ()
-  xdescribe "Pcap.org examples" $ do
+  fdescribe "Pcap.org examples" $ do
     files <- runIO $ filesWithExts "test/pcapng.org" [".ntar", ".pcapng"]
     runIO $ putStrLn $ "Test files found: " <> show files
-    describe "parse first block" $
+    fdescribe "parse first block" $
       forM_ files testPcapFileHeader
-    describe "parse entire file of blocks" $
+    fdescribe "parse entire file of blocks" $
       forM_ files testPcapFile

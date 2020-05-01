@@ -11,6 +11,7 @@ import           Conduit
 import           Control.Exception         (assert)
 import           Control.Lens
 import           Control.Lens.TH
+import           Control.Monad             (when)
 import qualified Data.ByteString.Char8     as BS
 import           Data.Conduit.Cereal       (conduitGet2)
 import           Data.Function
@@ -81,21 +82,27 @@ blockConduit endianness = awaitForever $ \dta -> do
 
 {-# INLINE decodeBlock #-}
 decodeBlock endianness dta =
+  trace ("Block type " <> show decodedBlockType
+       <> " len is " <> show headingLen <> " after swap " <> show (swapper endianness (dta `WS.index` 1))
+       <> " data " <> show dta
+       <> " rest " <> show rest) $
+  assert (headingWords > 3) $
+  assert (bodyWords  >= 0)  $
   assert (headingLen >= 12) $
   assert (headingLen == trailingLen) $ do
-    yield Block { _blockType = toEnum $ fromEnum $ swapper endianness $ dta `WS.index` 0
+    yield Block { _blockType = decodedBlockType
                 , _blockBody = WS.toBS body
                 }
-    trace ("Block len is " <> show (dta `WS.index` 1) <> " after swap " <> show (swapper endianness (dta `WS.index` 1))
-         <> "data" <> show dta
-         <> "rest" <> show rest) $
-      leftover rest
+    when (WS.length rest > 0) $ leftover rest
   where
-    headingLen  = fromIntegral $ swapper endianness $ dta `WS.index` 3
+    decodedBlockType = toEnum $ fromEnum $ swapper endianness $ dta `WS.index` 0
+    headingWords = headingLen `div` 4
+    headingLen  = fromIntegral $ swapper endianness $ dta `WS.index` 1
     bodyLen     = headingLen - 12
-    body        = WS.take (bodyLen `div` 4)
+    bodyWords   = bodyLen `div` 4
+    body        = WS.take bodyWords
                 $ WS.drop 2                        dta
-    rest        = WS.drop (headingLen `div` 4) dta
+    rest        = WS.drop headingWords dta
     trailingLen = fromIntegral $ swapper endianness $ dta `WS.index` (headingLen - 1)
 
 
