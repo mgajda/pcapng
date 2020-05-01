@@ -82,10 +82,10 @@ blockConduit endianness = awaitForever $ \dta -> do
 
 {-# INLINE decodeBlock #-}
 decodeBlock endianness dta =
-  trace ("Block type " <> show decodedBlockType
+  {-trace ("Block type " <> show decodedBlockType
        <> " len is " <> show headingLen <> " after swap " <> show (swapper endianness (dta `WS.index` 1))
        <> " data " <> show dta
-       <> " rest " <> show rest) $
+       <> " rest " <> show rest) $-}
   assert (headingWords > 3) $
   assert (bodyWords  >= 0)  $
   assert (headingLen >= 12) $
