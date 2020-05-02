@@ -12,6 +12,7 @@ module Data.WordString32 (
   , index
   , drop
   , take
+  , takeBytes
   , empty
   , length
   , append -- Use Semigroup.<>
@@ -104,6 +105,12 @@ take :: Int -> WordString -> WordString
 take i _ | i < 0 = error "Taking negative number of words"
 take i (WS wsPtr wsOffset wsLen) =
         WS wsPtr wsOffset $ min wsLen $ wsOffset+i
+
+{-# INLINE takeBytes #-}
+takeBytes :: Int -> WordString -> WordString
+takeBytes i _ | i < 0          = error "Taking negative number of bytes"
+takeBytes i _ | i `mod` 4 /= 0 = error "Can only take number of bytes divisible by 4"
+takeBytes i ws = take (i `div` 4) ws
 
 empty :: WordString
 empty  = fromBS $ BS.empty

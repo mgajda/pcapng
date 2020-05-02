@@ -85,7 +85,7 @@ decodeBlock endianness dta =
                 $ dta `WS.index` 1
     bodyLen     = headingLen - 12
     bodyWords   = bodyLen `div` 4
-    body        = WS.take bodyWords
+    body        = WS.takeBytes bodyLen
                 $ WS.drop 2            dta
     rest        = WS.drop headingWords dta
     trailingLen = fromIntegral
