@@ -19,7 +19,7 @@ import           Test.Hspec.Core.Runner
 import           Test.QuickCheck
 
 import qualified Data.WordString32.Conduit    as WSC
-import           Network.Pcap.Ng
+import           Network.Pcap.NG.Block
 import           Network.Pcap.NG.BlockType
 
 import qualified Test.Data.WordString32       as Test.WordString32 (spec)
@@ -72,7 +72,7 @@ blockTypes = awaitForever $ \block -> do
                                yield (block ^. blockType)
 
 parse filename = runConduitRes
-               $ WSC.sourceFile filename .| pcapNgConduit2 .| blockTypes .| consume
+               $ WSC.sourceFile filename .| blockConduit .| blockTypes .| consume
 
 {-
 parse :: FilePath -> IO ()
@@ -87,7 +87,7 @@ testPcapFileHeader filename =
 
 parseHeader filename = do
   header :: Maybe Block <- runConduitRes
-                         $ WSC.sourceFile filename .| pcapNgConduit2 .| C.head
+                         $ WSC.sourceFile filename .| blockConduit .| C.head
   case header of
     Just h  -> do
       print  $ h ^. blockType
@@ -148,9 +148,6 @@ spec = do
         testPcapFileSections "test/wireshark/sip.pcapng" $ [SectionHeader,IfDesc] <> replicate 6 EnhancedPacket
         testPcapFileSections "test/wireshark/wireguard-ping-tcp-dsb.pcapng" $
           [SectionHeader, IfDesc, DecryptionSecrets] <> replicate 22 EnhancedPacket
-    fdescribe "systemd example" $ do
-        testPcapFileSections "test/systemd.journal" $
-          [SectionHeader, IfDesc, EnhancedPacket, EnhancedPacket, EnhancedPacket, EnhancedPacket]
     describe "User example" $ do
         testPcapFileSections "test/gameplay1.pcapng" $
           [SectionHeader, IfDesc] <> replicate 99 EnhancedPacket

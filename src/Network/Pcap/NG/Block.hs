@@ -1,7 +1,11 @@
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Network.Pcap.Ng where
+module Network.Pcap.NG.Block(Block(..)
+                            ,blockType
+                            ,blockEndianness
+                            ,blockBody
+                            ,blockConduit) where
 -- * This module provides a PcapNG conduit
 --   for undifferentiated, undecoded PcapNG blocks
 --   without using libpcap per set.
@@ -31,23 +35,25 @@ data Block = Block {
 
 makeLenses ''Block
 
-pcapNgConduit2 :: MonadFail m => ConduitT WS.WordString Block m ()
-pcapNgConduit2 = WSC.atLeast  12 -- PcapNG files are expected to be word aligned, with 12 minimum block size
-              .| blockConduit LittleEndian -- SHB in the beginning should fix endianness anyway
+blockConduit :: MonadFail m => ConduitT WS.WordString Block m ()
+blockConduit  =  WSC.atLeast  12 -- PcapNG files are expected to be word aligned, with 12 minimum block size
+              .| blockConduitWithEndianness sameEndianness -- SHB in the beginning should fix endianness anyway
 
 -- TODO: how to ensure unrolling on endianness?
-blockConduit :: Monad m
-             => Endianness
-             -> ConduitT WS.WordString Block m ()
-blockConduit endianness = awaitForever $ \dta -> do
+blockConduitWithEndianness ::
+     Monad m
+  => Endianness
+  -> ConduitT WS.WordString Block m ()
+blockConduitWithEndianness endianness =
+  awaitForever $ \dta -> do
     if dta `WS.index` 0 == 0x0A0D0D0A
        then do -- Section header block, palindromic identification
           -- identify endianness from magic number
           let newEndianness | dta `WS.index` 2 == 0x1A2B3C4D = trace "same endianness"  sameEndianness  -- same endianness as the machine
                             | dta `WS.index` 2 == 0x4D3C2B1A = trace "other endianness" otherEndianness -- opposite endianness on magic
                             | otherwise                      = error $ "Cannot recover endianness from: " <> show (dta `WS.index` 2)
-          decodeBlock  newEndianness dta
-          blockConduit newEndianness
+          decodeBlock                newEndianness dta
+          blockConduitWithEndianness newEndianness
        else decodeBlock endianness dta
 
 {-# INLINE decodeBlock #-}
