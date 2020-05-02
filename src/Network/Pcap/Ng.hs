@@ -2,70 +2,40 @@
 {-# LANGUAGE StrictData      #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Network.Pcap.Ng where
--- * This module provides a Pcap conduit
+-- * This module provides a PcapNG conduit
+--   for undifferentiated, undecoded PcapNG blocks
 --   without using libpcap per set.
 --   It sticks to the same types, but allows reading any stream of packets
 --   not necessarily from libpcap, file or live source.
 
 import           Conduit
-import           Control.Exception         (assert)
+import           Control.Exception          (assert)
 import           Control.Lens
 import           Control.Lens.TH
-import           Control.Monad             (when)
-import qualified Data.ByteString.Char8     as BS
-import           Data.Conduit.Cereal       (conduitGet2)
-import           Data.Function
-import           Data.Serialize
-import           Data.Word
-import qualified Data.WordString32         as WS
-import qualified Data.WordString32.Conduit as WSC
+import           Control.Monad              (when)
+import qualified Data.ByteString.Char8      as BS
+import qualified Data.WordString32          as WS
+import qualified Data.WordString32.Conduit  as WSC
 import           GHC.Generics
 
 import           Network.Pcap.NG.BlockType
+import           Network.Pcap.NG.Endianness
 
-import           Debug.Trace               (trace)
+import           Debug.Trace                (trace)
 
 data Block = Block {
-    _blockType :: BlockType
-  , _blockBody :: BS.ByteString
+    _blockType       :: BlockType
+  , _blockEndianness :: Endianness
+  , _blockBody       :: BS.ByteString
   } deriving (Eq, Show, Generic)
 
 makeLenses ''Block
-
-instance Serialize Block where
-  get = do
-    blockType <- get
-    blockLen  <- getWord32le
-    let bodyLen = blockLen-12
-    body      <- getBytes $ fromEnum bodyLen
-    blockLen2 <- getWord32le
-    if blockLen == blockLen2
-      then pure $ Block blockType body
-      else fail $ concat [
-               "Inconsistent heading and trailing block lengths: "
-             , show blockLen, " /= ", show blockLen2]
-  put (Block bt body) = do
-      put bt
-      put totalLength
-      putByteString paddedBody
-      put totalLength
-    where
-      paddingLength = (4 - (BS.length body `mod` 4)) `mod` 4
-      paddedBody    =  body <> BS.replicate paddingLength '\0'
-      totalLength   =  12   +  BS.length paddedBody
-
-pcapNgConduit :: MonadThrow m => ConduitT BS.ByteString Block m ()
-pcapNgConduit  = conduitGet2 get
 
 pcapNgConduit2 :: MonadFail m => ConduitT WS.WordString Block m ()
 pcapNgConduit2 = WSC.atLeast  12 -- PcapNG files are expected to be word aligned, with 12 minimum block size
               .| blockConduit LittleEndian -- SHB in the beginning should fix endianness anyway
 
--- TODO: use CAF
-sameEndianness  = LittleEndian
-otherEndianness = BigEndian
-
--- FIXME: how to ensure unrolling on endianness?
+-- TODO: how to ensure unrolling on endianness?
 blockConduit :: Monad m
              => Endianness
              -> ConduitT WS.WordString Block m ()
@@ -81,6 +51,10 @@ blockConduit endianness = awaitForever $ \dta -> do
        else decodeBlock endianness dta
 
 {-# INLINE decodeBlock #-}
+decodeBlock :: Monad m
+            => Endianness
+            ->          WS.WordString
+            -> ConduitT WS.WordString Block m ()
 decodeBlock endianness dta =
   {-trace ("Block type " <> show decodedBlockType
        <> " len is " <> show headingLen <> " after swap " <> show (swapper endianness (dta `WS.index` 1))
@@ -90,29 +64,27 @@ decodeBlock endianness dta =
   assert (bodyWords  >= 0)  $
   assert (headingLen >= 12) $
   assert (headingLen == trailingLen) $ do
-    yield Block { _blockType = decodedBlockType
-                , _blockBody = WS.toBS body
+    yield Block { _blockType       = decodedBlockType
+                , _blockEndianness = endianness
+                , _blockBody       = WS.toBS body
                 }
     when (WS.length rest > 0) $ leftover rest
   where
-    decodedBlockType = toEnum $ fromEnum $ swapper endianness $ dta `WS.index` 0
+    decodedBlockType = toEnum $ fromEnum
+                     $ swapper endianness
+                     $ dta `WS.index` 0
     headingWords = headingLen `div` 4
-    headingLen  = fromIntegral $ swapper endianness $ dta `WS.index` 1
+    headingLen  = fromIntegral
+                $ swapper endianness
+                $ dta `WS.index` 1
     bodyLen     = headingLen - 12
     bodyWords   = bodyLen `div` 4
     body        = WS.take bodyWords
-                $ WS.drop 2                        dta
+                $ WS.drop 2            dta
     rest        = WS.drop headingWords dta
-    trailingLen = fromIntegral $ swapper endianness $ dta `WS.index` (headingLen - 1)
-
-
-swapper endianness | sameEndianness == endianness = id
-swapper endianness = byteSwap32
-
-data Endianness =
-    LittleEndian
-  | BigEndian
-  deriving (Eq, Show, Read, Enum, Bounded)
+    trailingLen = fromIntegral
+                $ swapper endianness
+                $ dta `WS.index` (headingLen - 1)
 
 {-
 data Pkt = Pkt {

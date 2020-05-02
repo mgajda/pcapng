@@ -26,7 +26,7 @@ import           Debug.Trace
 import           Foreign.C.Types          (CSize (..))
 import           Foreign.ForeignPtr       (ForeignPtr, castForeignPtr,
                                            withForeignPtr)
-import           Foreign.Ptr              (Ptr, nullPtr, plusPtr)
+import           Foreign.Ptr              (Ptr, plusPtr)
 import           Foreign.Storable
 import           GHC.ForeignPtr           (mallocPlainForeignPtrBytes)
 import           Prelude                  hiding (drop, length, null, take)
@@ -122,7 +122,7 @@ foreign import ccall unsafe "string.h memcpy" c_memcpy
 
 memcpy :: Ptr Word32 -> Ptr Word32 -> Int -> IO ()
 memcpy p q s = do
-  c_memcpy p q $ fromIntegral s*4
+  _ <- c_memcpy p q $ fromIntegral s*4
   return ()
 
 append a b | null b = a
@@ -144,4 +144,6 @@ append a@(WS aPtr aOffset aLen)
     totalLen = aWords+bWords
     aWords   = aLen-aOffset
     bWords   = bLen-bOffset
-    plusWords a b = a `plusPtr` (b*4)
+
+plusWords :: Ptr a -> Int -> Ptr a
+plusWords a b = a `plusPtr` (b*4)

@@ -4,14 +4,14 @@ module Data.WordString32.Conduit(
   , atLeast
   ) where
 
-import           Control.Monad.Trans.Resource (MonadResource(..))
-import qualified Data.ByteString     as BS
-import qualified Data.WordString32   as WS
-import           Data.Conduit                 (mapInput, mapOutput, ConduitT, (.|), await, yield )
-import qualified Data.Conduit.Binary as C
-import qualified Data.Conduit.List   as C
+import           Control.Monad.Trans.Resource (MonadResource (..))
+import qualified Data.ByteString              as BS
+import           Data.Conduit                 (ConduitT, await, yield, (.|))
+import qualified Data.Conduit.Binary          as C
+import qualified Data.Conduit.List            as C
+import qualified Data.WordString32            as WS
 
-import Debug.Trace(trace)
+import           Debug.Trace                  (trace)
 
 sourceFile :: (MonadResource m
               ,MonadFail     m)
@@ -20,8 +20,8 @@ sourceFile :: (MonadResource m
 sourceFile filepath = C.sourceFile filepath .| go
   where
     go = do
-      bs <- trace "sourceFile chunk" $ await
-      case bs of
+      maybeBs <- trace "sourceFile chunk" $ await
+      case maybeBs of
         Nothing -> return ()
         Just bs | BS.length bs `mod` 4 /= 0 -> do
           -- OMG, why do we need to do this (hspec error)
@@ -55,4 +55,3 @@ atLeast n = go WS.empty
           trace "long chunk" $
             yield $ rest <> chunk
         Just shortChunk -> trace "short chunk" $ go $ rest <> shortChunk
-

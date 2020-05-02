@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f3f4d06330ee8624dfb92ffcc3b541282eeb888b33d0aa7332e6c026ac3eb819
+-- hash: 274385b7241ad3f83668cb8b9699bd148f0eba271a9abf3857134c7f73655020
 
 name:           pcapng
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
       Data.WordString32.Conduit
       Network.Pcap.Ng
       Network.Pcap.NG.BlockType
+      Network.Pcap.NG.Endianness
   other-modules:
       Paths_pcapng
   hs-source-dirs:
