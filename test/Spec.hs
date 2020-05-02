@@ -1,28 +1,31 @@
 {-# LANGUAGE NamedFieldPuns      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-import           Control.Lens                 ((^.))
-import           Control.Monad                (forM, forM_)
+import           Control.Lens                    ((^.))
+import           Control.Monad                   (forM, forM_)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
 import           Data.Conduit
-import           Data.Conduit.Cereal          (sinkGet)
-import qualified Data.Conduit.Combinators     as C (head, sourceFile)
-import           Data.Conduit.List            (consume)
-import           Data.List                    (isPrefixOf)
-import           Data.Serialize               (get)
+import           Data.Conduit.Cereal             (sinkGet)
+import qualified Data.Conduit.Combinators        as C (head, sourceFile)
+import           Data.Conduit.List               (consume)
+import           Data.List                       (isPrefixOf)
+import           Data.Serialize                  (get)
 import           System.Directory
-import           System.FilePath.Posix        (takeExtension, takeFileName,
-                                               (</>))
-import           System.IO                    (hPutStrLn, stderr)
+import           System.FilePath.Posix           (takeExtension, takeFileName,
+                                                  (</>))
+import           System.IO                       (hPutStrLn, stderr)
 import           Test.Hspec
 import           Test.Hspec.Core.Runner
 import           Test.QuickCheck
 
-import qualified Data.WordString32.Conduit    as WSC
+import qualified Data.WordString32.Conduit       as WSC
 import           Network.Pcap.NG.Block
 import           Network.Pcap.NG.BlockType
 
-import qualified Test.Data.WordString32       as Test.WordString32 (spec)
+import qualified Test.Data.WordString32          (spec)
+import qualified Test.Network.Pcap.NG.BlockType  (spec)
+import qualified Test.Network.Pcap.NG.Endianness (spec)
+import qualified Test.Network.Pcap.NG.Options    (spec)
 
 main :: IO ()
 main = hspecWith config spec
@@ -95,8 +98,12 @@ parseHeader filename = do
     Nothing -> error "No blocktype here!"
 
 spec = do
+  describe "Network.Pcap.NG.BlockType" $
+    Test.Network.Pcap.NG.BlockType.spec
+  describe "Network.Pcap.NG.Options" $
+    Test.Network.Pcap.NG.Options.spec
   describe "Data.WordString32" $
-    Test.WordString32.spec
+    Test.Data.WordString32.spec
   describe "Block recognition" $ do
     return ()
   describe "Undifferentiated blocks" $ do

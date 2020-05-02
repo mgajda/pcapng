@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7f4056e39bb125e7b732ebeb3eae934792ac17c9dffddbe4cbd40b2de42043f0
+-- hash: e97aedf78580aa053a52e55805fe5c3d47a6cd2a65fe41d68434e000c0940558
 
 name:           pcapng
 version:        0.1.0.0
@@ -76,6 +76,10 @@ test-suite pcapng-test
   main-is: Spec.hs
   other-modules:
       Test.Data.WordString32
+      Test.Network.Pcap.NG.BlockType
+      Test.Network.Pcap.NG.Endianness
+      Test.Network.Pcap.NG.Options
+      Test.Validity.Enum
       Paths_pcapng
   hs-source-dirs:
       test
@@ -92,6 +96,7 @@ test-suite pcapng-test
     , directory
     , filepath
     , genvalidity-hspec
+    , genvalidity-property
     , hspec
     , hspec-core
     , lens

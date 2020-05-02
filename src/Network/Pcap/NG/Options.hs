@@ -1,5 +1,6 @@
 {-# LANGUAGE BinaryLiterals     #-}
 {-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE KindSignatures     #-}
 {-# LANGUAGE NamedFieldPuns     #-}
@@ -16,7 +17,9 @@ import           Data.Proxy
 import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
 import qualified Data.Text.Encoding         as Text (decodeUtf8)
+import           Data.Typeable
 import           Data.Word
+import           GHC.Generics
 
 import qualified Data.WordString32          as WS
 import           Network.Pcap.NG.BlockType
@@ -92,6 +95,7 @@ data ReceptionType =
   | Multicast
   | Broadcast
   | Promiscuous
+  deriving (Eq,Ord,Show,Typeable,Generic)
 
 instance Enum ReceptionType where
   toEnum 0b000 = Unspecified

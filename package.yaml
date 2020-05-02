@@ -65,4 +65,5 @@ tests:
     - QuickCheck
     - validity
     - genvalidity-hspec
+    - genvalidity-property
     - bytestring-arbitrary

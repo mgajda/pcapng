@@ -1,6 +1,6 @@
-{-# LANGUAGE NamedFieldPuns  #-}
-{-# LANGUAGE StrictData      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE StrictData     #-}
 module Network.Pcap.NG.BlockType(
     BlockType(..)
   , encodeBlockType
@@ -14,9 +14,11 @@ module Network.Pcap.NG.BlockType(
 
 import qualified Data.ByteString.Char8 as BS
 import           Data.Function
-import           Data.Word
 import           Data.Serialize
-import           Numeric(showHex)
+import           Data.Typeable
+import           Data.Word
+import           GHC.Generics
+import           Numeric               (showHex)
 
 -- | PCAP-NG block type
 --
@@ -47,6 +49,7 @@ data BlockType =
   | Reserved   Word32
   | Corruption Word32
   | LocalUse   Word32
+  deriving (Typeable, Generic)
 
 instance Show BlockType where
   show (Corruption w)               = "Corruption " <> showHex w ""
