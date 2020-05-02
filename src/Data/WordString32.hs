@@ -154,3 +154,9 @@ append a@(WS aPtr aOffset aLen)
 
 plusWords :: Ptr a -> Int -> Ptr a
 plusWords a b = a `plusPtr` (b*4)
+
+indexWord16 :: BS.ByteString -> Word16
+indexWord16  = undefined
+
+indexWord64 :: WordString -> Word64
+indexWord64  = undefined

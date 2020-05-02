@@ -30,6 +30,7 @@ dependencies:
 - unliftio-core
 - resourcet
 - lens
+- text
 
 library:
   source-dirs: src
