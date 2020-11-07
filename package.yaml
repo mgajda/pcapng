@@ -6,10 +6,8 @@ author:              "Michał J. Gajda"
 maintainer:          "mjgajda@gmail.com"
 copyright:           "BSD3"
 category:            Network
-synopsis: |
-  Conduit for reading PcapNG.org format.
-  .
-  May be also useful for reading both WireShark .pcapng dumps and system journals.
+synopsis: >
+    Conduit for reading PcapNG.org format.
 
 extra-source-files:
 - README.md
@@ -24,6 +22,8 @@ extra-source-files:
 # common to point users to the README.md file.
 description: |
   PCAP-NG and PCAP format reader and writer.
+  .
+  May be also useful for reading both WireShark .pcapng dumps and system journals.
 
 dependencies:
 - base >= 4.7 && < 5

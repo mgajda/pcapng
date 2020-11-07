@@ -4,11 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e97aedf78580aa053a52e55805fe5c3d47a6cd2a65fe41d68434e000c0940558
+-- hash: df1f788f3a64bd88e3f425d93628fb8e793341088e2d8901ac17bd80125a678c
 
 name:           pcapng
 version:        0.1.0.0
+synopsis:       Conduit for reading PcapNG.org format.
+
 description:    PCAP-NG and PCAP format reader and writer.
+                .
+                May be also useful for reading both WireShark .pcapng dumps and system journals.
+category:       Network
 homepage:       https://github.com/mgajda/pcapng#readme
 bug-reports:    https://github.com/mgajda/pcapng/issues
 author:         Michał J. Gajda
