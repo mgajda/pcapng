@@ -5,6 +5,11 @@ license:             BSD3
 author:              "Michał J. Gajda"
 maintainer:          "mjgajda@gmail.com"
 copyright:           "BSD3"
+category:            Network
+synopsis: |
+  Conduit for reading PcapNG.org format.
+  .
+  May be also useful for reading both WireShark .pcapng dumps and system journals.
 
 extra-source-files:
 - README.md
