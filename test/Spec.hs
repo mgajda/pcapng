@@ -155,6 +155,3 @@ spec = do
         testPcapFileSections "test/wireshark/sip.pcapng" $ [SectionHeader,IfDesc] <> replicate 6 EnhancedPacket
         testPcapFileSections "test/wireshark/wireguard-ping-tcp-dsb.pcapng" $
           [SectionHeader, IfDesc, DecryptionSecrets] <> replicate 22 EnhancedPacket
-    describe "User example" $ do
-        testPcapFileSections "test/gameplay1.pcapng" $
-          [SectionHeader, IfDesc] <> replicate 99 EnhancedPacket
