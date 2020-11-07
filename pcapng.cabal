@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: df1f788f3a64bd88e3f425d93628fb8e793341088e2d8901ac17bd80125a678c
+-- hash: 10228cb8e64daebc3026c9290f7fd85c7f91827737181e5f1ad16b85db61909f
 
 name:           pcapng
 version:        0.1.0.0
@@ -23,8 +23,23 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    README.md
-    ChangeLog.md
+    test/wireshark/dhcp-nanosecond.pcapng
+    test/wireshark/dhcp.pcapng
+    test/wireshark/dmgr.pcapng
+    test/wireshark/dtls12-aes128ccm8-dsb.pcapng
+    test/wireshark/http-brotli.pcapng
+    test/wireshark/http2-brotli.pcapng
+    test/wireshark/ikev2-decrypt-aes256cbc.pcapng
+    test/wireshark/ikev2-decrypt-aes256ccm16.pcapng
+    test/wireshark/packet-h2-14_headers.pcapng
+    test/wireshark/sip.pcapng
+    test/wireshark/tls12-dsb.pcapng
+    test/wireshark/wireguard-ping-tcp-dsb.pcapng
+    test/pcapng.org/dhcp.pcapng
+    test/pcapng.org/dhcp_big_endian.pcapng
+    test/pcapng.org/dhcp_little_endian.pcapng
+    test/pcapng.org/many_interfaces.pcapng
+    test/pcapng.org/README.md
 
 source-repository head
   type: git

@@ -51,6 +51,12 @@ executables:
     dependencies:
     - pcapng
 
+extra-source-files:
+  - test/wireshark/*.pcapng
+  - test/wireshark/*.ntar
+  - test/pcapng.org/*.pcapng
+  - test/*/README.md
+
 tests:
   pcapng-test:
     main:                Spec.hs
