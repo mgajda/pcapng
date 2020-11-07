@@ -9,10 +9,6 @@ category:            Network
 synopsis: >
     Conduit for reading PcapNG.org format.
 
-extra-source-files:
-- README.md
-- ChangeLog.md
-
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
 # category:            Web
@@ -56,6 +52,8 @@ extra-source-files:
   - test/wireshark/*.ntar
   - test/pcapng.org/*.pcapng
   - test/*/README.md
+  - README.md
+  - ChangeLog.md
 
 tests:
   pcapng-test:
